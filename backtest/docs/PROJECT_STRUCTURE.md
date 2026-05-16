@@ -10,7 +10,10 @@ backtest/
 
   config/
     backtest_config.json
-    backtest_config.yaml
+
+  StrategyConfig/
+    ema_adx_crossover/
+      ema_adx_crossover_config.json
 
   DATA/
     2026-05-15/
@@ -58,7 +61,10 @@ backtest/
 ## What Each Folder Means
 
 `config/`
-Stores runtime settings. Change strategy name, data provider, execution mode, risk rules, optimization grid, and report columns here.
+Stores global runtime settings. Change data provider, strategy name, execution mode, risk rules, and report columns here.
+
+`StrategyConfig/`
+Stores strategy-specific parameters and optimization grids. Each strategy gets its own folder.
 
 `DATA/`
 Default CSV data location. The current format is:

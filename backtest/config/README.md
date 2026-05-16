@@ -9,9 +9,13 @@ Change these settings here:
 ```text
 data provider
 strategy name
-strategy parameters
 execution mode
 risk rules
-optimization grid
 report columns
+```
+
+Strategy-specific parameters and optimization grids live in:
+
+```text
+StrategyConfig/{strategy_name}/{strategy_name}_config.json
 ```
