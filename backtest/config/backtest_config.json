@@ -48,7 +48,7 @@
     "name": "ema_adx_crossover"
   },
   "execution": {
-    "instrument": "FUTURES",
+    "instrument": "OPTIONS",
     "mode": "BUY",
     "product_type": "INTRADAY",
     "strike_selector": "ATM",
