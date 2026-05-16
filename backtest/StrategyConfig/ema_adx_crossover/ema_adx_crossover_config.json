@@ -1,0 +1,24 @@
+{
+  "strategy": {
+    "name": "ema_adx_crossover",
+    "parameters": {
+      "ema_fast": 5,
+      "ema_slow": 18,
+      "adx_period": 10,
+      "adx_threshold": 18.0,
+      "require_adx_rising": false,
+      "min_ema_distance": 0.0,
+      "min_ema_distance_pct": 0.0
+    },
+    "optimization": {
+      "parameter_grid": {
+        "ema_fast": {"start": 5, "stop": 15, "step": 1},
+        "ema_slow": {"start": 18, "stop": 50, "step": 1},
+        "adx_period": {"start": 10, "stop": 20, "step": 1},
+        "adx_threshold": {"values": [18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0]},
+        "require_adx_rising": {"values": [false]},
+        "min_ema_distance_pct": {"values": [0.0]}
+      }
+    }
+  }
+}

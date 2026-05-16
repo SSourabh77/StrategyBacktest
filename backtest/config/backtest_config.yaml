@@ -1,0 +1,114 @@
+﻿market:
+  symbol: NIFTY
+  timezone: Asia/Kolkata
+  session_start: "09:15"
+  session_end: "15:30"
+  square_off_time: "15:20"
+  lot_size: 50
+  strike_step: 50
+
+portfolio:
+  initial_capital: 0.0
+
+data:
+  provider: csv
+  root: DATA
+  start_date: 2026-05-15
+  end_date: 2026-05-15
+  timeframe: 1min
+  column_mapping:
+    datetime: datetime
+    symbol: symbol
+    open: open
+    high: high
+    low: low
+    close: close
+    volume: volume
+    expiry: expiry
+    strike: strike
+    option_type: option_type
+  csv:
+    date_folder_format: "%Y-%m-%d"
+    futures_glob: "*future*.csv"
+    options_glob: "*option*.csv"
+  excel:
+    file: DATA/market_data.xlsx
+    futures_sheet: futures
+    options_sheet: options
+  custom:
+    module_path: custom_providers/sample_custom_provider.py
+    class_name: SampleCustomProvider
+
+strategy:
+  name: ema_adx_crossover
+
+execution:
+  instrument: OPTIONS
+  mode: BUY
+  product_type: INTRADAY
+  strike_selector: ATM
+  expiry_selector: NEAREST
+  fixed_expiry:
+  quantity_lots: 1
+  signal_execution_delay_bars: 1
+  price_column: close
+  allow_missing_option_price: false
+  min_option_volume: 1
+  max_bid_ask_spread:
+  slippage_points: 0.0
+  charges_per_order: 0.0
+
+risk:
+  stop_loss_pct: 25.0
+  target_pct: 50.0
+  trailing_sl_pct:
+  max_trades_per_day: 5
+  max_daily_loss:
+  square_off_time: "15:20"
+
+optimization:
+  enabled: true
+  resume: true
+  ranking_metric: profit_factor
+  parameter_grid: {}
+
+reports:
+  formats: [csv, json]
+  tradebook_columns:
+    - run_id
+    - strategy_name
+    - parameter_hash
+    - entry_time
+    - exit_time
+    - signal
+    - action
+    - instrument
+    - symbol
+    - expiry
+    - option_type
+    - strike
+    - quantity
+    - entry_price
+    - exit_price
+    - gross_pnl
+    - charges
+    - net_pnl
+    - exit_reason
+    - metadata
+  optimization_columns:
+    - run_id
+    - strategy_name
+    - parameter_hash
+    - parameters
+    - total_trades
+    - winning_trades
+    - losing_trades
+    - win_rate
+    - gross_profit
+    - gross_loss
+    - net_pnl
+    - profit_factor
+    - max_drawdown
+    - expectancy
+  column_renames: {}
+

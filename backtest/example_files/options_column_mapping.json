@@ -1,0 +1,12 @@
+{
+  "datetime": "datetime",
+  "symbol": "symbol",
+  "expiry": "expiry",
+  "strike": "strike",
+  "option_type": "option_type",
+  "open": "open",
+  "high": "high",
+  "low": "low",
+  "close": "close",
+  "volume": "volume"
+}

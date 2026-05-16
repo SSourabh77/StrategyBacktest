@@ -1,0 +1,9 @@
+{
+  "datetime": "datetime",
+  "symbol": "symbol",
+  "open": "open",
+  "high": "high",
+  "low": "low",
+  "close": "close",
+  "volume": "volume"
+}
