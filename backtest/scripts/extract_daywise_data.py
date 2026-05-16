@@ -50,6 +50,7 @@ def auto_standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
         "expiry": ["expiry", "expiry_date", "expiration"],
         "strike": ["strike", "strike_price"],
         "option_type": ["option_type", "opt_type", "type", "cp", "call_put"],
+        "derivative_type": ["derivative_type", "deriv_type", "instrument_type", "segment"],
         "open_interest": ["open_interest", "oi"],
     }
     normalized = {str(column).strip().lower(): column for column in df.columns}
@@ -87,6 +88,15 @@ def find_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
     return None
 
 
+def filter_derivative_type(df: pd.DataFrame, derivative_type: str, label: str) -> pd.DataFrame:
+    if "derivative_type" not in df.columns:
+        return df
+    clean = df[df["derivative_type"].astype(str).str.strip().str.upper() == derivative_type].copy()
+    if clean.empty:
+        raise ValueError(f"No {label} rows found where derivative_type={derivative_type}")
+    return clean
+
+
 def clean_futures(
     df: pd.DataFrame,
     symbol: str | None,
@@ -95,6 +105,7 @@ def clean_futures(
     timeframe: str | None,
     futures_expiry: str | None,
 ) -> pd.DataFrame:
+    df = filter_derivative_type(df, "F", "futures")
     clean = build_datetime(df, date_col, time_col)
     if "symbol" not in clean.columns:
         clean["symbol"] = symbol or "NIFTY"
@@ -108,6 +119,7 @@ def clean_futures(
 
 
 def clean_options(df: pd.DataFrame, symbol: str | None, date_col: str | None, time_col: str | None, timeframe: str | None) -> pd.DataFrame:
+    df = filter_derivative_type(df, "O", "options")
     clean = build_datetime(df, date_col, time_col)
     if "symbol" not in clean.columns:
         clean["symbol"] = symbol or "NIFTY"
@@ -183,6 +195,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Extract raw data into DATA/{Date}/futures.csv and options.csv")
     parser.add_argument("--futures-file", help="Raw futures CSV/Excel/Parquet file")
     parser.add_argument("--options-file", help="Raw options CSV/Excel/Parquet file")
+    parser.add_argument("--mixed-file", help="Raw file containing both futures and options. Uses derivative_type F/O to split.")
     parser.add_argument("--futures-sheet", help="Excel sheet name for futures")
     parser.add_argument("--options-sheet", help="Excel sheet name for options")
     parser.add_argument("--futures-mapping", help="JSON mapping: standard_column -> raw_column")
@@ -195,8 +208,16 @@ def main() -> None:
     parser.add_argument("--futures-expiry", default="I", help="Futures expiry series to use when raw file contains I/II/III. Default: I")
     args = parser.parse_args()
 
-    if not args.futures_file and not args.options_file:
-        raise ValueError("Provide --futures-file, --options-file, or both.")
+    if not args.futures_file and not args.options_file and not args.mixed_file:
+        raise ValueError("Provide --futures-file, --options-file, --mixed-file, or a combination.")
+
+    if args.mixed_file:
+        mixed = read_table(args.mixed_file)
+        mixed = apply_mapping(mixed, load_mapping(args.futures_mapping or args.options_mapping))
+        futures = clean_futures(mixed, args.symbol, args.date_col, args.time_col, args.timeframe, args.futures_expiry)
+        write_daywise(futures, args.output_root, "futures.csv")
+        options = clean_options(mixed, args.symbol, args.date_col, args.time_col, args.timeframe)
+        write_daywise(options, args.output_root, "options.csv")
 
     if args.futures_file:
         futures = read_table(args.futures_file, args.futures_sheet)
