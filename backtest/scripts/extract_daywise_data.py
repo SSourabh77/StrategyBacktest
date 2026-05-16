@@ -97,6 +97,13 @@ def filter_derivative_type(df: pd.DataFrame, derivative_type: str, label: str) -
     return clean
 
 
+def has_derivative_type(df: pd.DataFrame, derivative_type: str) -> bool:
+    if "derivative_type" not in df.columns:
+        return False
+    values = df["derivative_type"].astype(str).str.strip().str.upper()
+    return bool((values == derivative_type).any())
+
+
 def clean_futures(
     df: pd.DataFrame,
     symbol: str | None,
@@ -107,6 +114,7 @@ def clean_futures(
 ) -> pd.DataFrame:
     df = filter_derivative_type(df, "F", "futures")
     clean = build_datetime(df, date_col, time_col)
+    clean["datetime"] = clean["datetime"].dt.floor("min")
     if "symbol" not in clean.columns:
         clean["symbol"] = symbol or "NIFTY"
     clean["symbol"] = clean["symbol"].fillna(symbol or "NIFTY")
@@ -121,6 +129,7 @@ def clean_futures(
 def clean_options(df: pd.DataFrame, symbol: str | None, date_col: str | None, time_col: str | None, timeframe: str | None) -> pd.DataFrame:
     df = filter_derivative_type(df, "O", "options")
     clean = build_datetime(df, date_col, time_col)
+    clean["datetime"] = clean["datetime"].dt.floor("min")
     if "symbol" not in clean.columns:
         clean["symbol"] = symbol or "NIFTY"
     clean["symbol"] = clean["symbol"].fillna(symbol or "NIFTY")
@@ -179,6 +188,15 @@ def resample_ohlc(df: pd.DataFrame, group_columns: list[str], timeframe: str | N
     return result[[column for column in ordered if column in result.columns]].sort_values("datetime").reset_index(drop=True)
 
 
+def normalize_timeframe(value: str | None) -> str | None:
+    if value is None:
+        return None
+    value = str(value).strip()
+    if value.lower() in {"", "none", "raw", "no", "false", "off"}:
+        return None
+    return value
+
+
 def write_daywise(df: pd.DataFrame, output_root: str | None, output_name: str) -> None:
     if output_root is None:
         output_root = str(Path(__file__).resolve().parents[1] / "DATA")
@@ -207,6 +225,7 @@ def main() -> None:
     parser.add_argument("--timeframe", default="1min", help="Resample output candles. Use empty string to disable. Default: 1min")
     parser.add_argument("--futures-expiry", default="I", help="Futures expiry series to use when raw file contains I/II/III. Default: I")
     args = parser.parse_args()
+    args.timeframe = normalize_timeframe(args.timeframe)
 
     if not args.futures_file and not args.options_file and not args.mixed_file:
         raise ValueError("Provide --futures-file, --options-file, --mixed-file, or a combination.")
@@ -214,10 +233,18 @@ def main() -> None:
     if args.mixed_file:
         mixed = read_table(args.mixed_file)
         mixed = apply_mapping(mixed, load_mapping(args.futures_mapping or args.options_mapping))
-        futures = clean_futures(mixed, args.symbol, args.date_col, args.time_col, args.timeframe, args.futures_expiry)
-        write_daywise(futures, args.output_root, "futures.csv")
-        options = clean_options(mixed, args.symbol, args.date_col, args.time_col, args.timeframe)
-        write_daywise(options, args.output_root, "options.csv")
+        if "derivative_type" not in mixed.columns:
+            raise ValueError("--mixed-file requires derivative_type column with F for futures and O for options.")
+        if has_derivative_type(mixed, "F"):
+            futures = clean_futures(mixed, args.symbol, args.date_col, args.time_col, args.timeframe, args.futures_expiry)
+            write_daywise(futures, args.output_root, "futures.csv")
+        else:
+            print("No derivative_type=F rows found. Skipping futures.csv.")
+        if has_derivative_type(mixed, "O"):
+            options = clean_options(mixed, args.symbol, args.date_col, args.time_col, args.timeframe)
+            write_daywise(options, args.output_root, "options.csv")
+        else:
+            print("No derivative_type=O rows found. Skipping options.csv.")
 
     if args.futures_file:
         futures = read_table(args.futures_file, args.futures_sheet)
