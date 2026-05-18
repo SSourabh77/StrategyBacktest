@@ -4,6 +4,8 @@ Portable, strategy-independent Python backtesting framework for Nifty futures si
 
 Version 1 includes a complete EMA + ADX strategy, ATM option execution, generic optimization, per-combination logs, configurable reports, and plugin-style data providers.
 
+See `docs/BACKTEST_FLOW.md` for the full interview-ready explanation of the data, signal, option execution, risk, optimization, and reporting flow.
+
 ## Quick Start
 
 ```bash
